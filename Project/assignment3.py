@@ -27,12 +27,12 @@ def arg_debugging(debug = True):
     print("Usage: ./assignment -l <port> -p <pattern>")
     return None, None
 
-  port = sys.argv[2]
+  port: int = sys.argv[2]
   if port < 1024:
     print("Usage: 1025 or Higher Port Number.")
     return None, None
   
-  pattern = sys.argv[4]
+  pattern: str = sys.argv[4]
   if(debug):
     print(f"Script name: {sys.argv[0]}")
     print(f"Port number: {port}")
