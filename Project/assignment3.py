@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 # Libraries 
 import sys 
 
@@ -9,9 +8,12 @@ def main():
     print("Usage: ./assigment -l <port> -p <pattern>")
     return
 
+  port = sys.argv[2]
+  pattern = sys.argv[4]
+  
   print(f"Script name: {sys.argv[0]}")
-  print(f"Port number: {sys.argv[2]}")
-  print(f"Pattern type: {sys.argv[4]}")
+  print(f"Port number: {port}")
+  print(f"Pattern type: {pattern}")
 
 #Python file for a multi-threaded network server in python.
 
@@ -23,3 +25,5 @@ def main():
 
 #Receive and store data in a list. 
 
+if __name__ == "__main__":
+    main()
