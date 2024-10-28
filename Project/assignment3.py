@@ -39,7 +39,6 @@ def arg_debugging(debug = True):
     print(f"Pattern type: {pattern}")
   return port, pattern
 
-def 
 # Main Script
 def main():
   port, pattern = arg_debugging()
