@@ -64,7 +64,7 @@ def arg_debugging(debug = True):
 
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  serv_sock.bind((socket.gethostname(),port))
+  serv_sock.bind(("0.0.0",port))
   serv_sock.setblocking(True)
   serv_sock.listen(10)
   return serv_sock
