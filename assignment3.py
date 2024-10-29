@@ -2,6 +2,7 @@
 
 # Python file for a multi-threaded network server in python.
 import sys 
+import select
 import socket
 import threading
 from queue import Queue
@@ -9,9 +10,9 @@ from queue import Queue
 # Functions  Classes
 class Node: 
   def __init__(self, data = None, next = None, book_next = None, next_frequent_search = None):
-    self.next = next
+    self.next: Node = next
     self.data = data
-    self.book_next = book_next
+    self.book_next: Node = book_next
     self.next_frequent_search = next_frequent_search
 
 class llist:
@@ -25,6 +26,12 @@ class llist:
     new_Node = Node(write)
     if book_num not in self.header:
       self.header[book_num] = new_Node
+    else:
+      curr_Node = self.header[book_num]
+      while(curr_Node.book_next is not None):
+        print("book_num looping")
+        curr_Node = curr_Node.book_next
+      curr_Node.book_next = new_Node
     
     if self.list is None:
       self.list = new_Node
@@ -53,10 +60,7 @@ def arg_debugging(debug = True):
     print("Usage: ./assignment -l <port> -p <pattern>")
     return None, None
 
-  port: int = int(sys.argv[2])
-  if port < 1024:
-    print("Usage: 1025 or greater port Number.")
-    return None, None
+  port = int(sys.argv[2])
   
   pattern: str = sys.argv[4]
   if(debug):
@@ -67,6 +71,7 @@ def arg_debugging(debug = True):
 
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #Solves address in use when Ctrl+C.
   #serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
   serv_sock.bind(("", port))
   serv_sock.setblocking(True)
@@ -74,25 +79,27 @@ def init_serv_sock(port):
   return serv_sock
 
 def client_handler(cli_sock, lock, shared_list, book_num):
-  print("We are client")
   cli_sock.setblocking(False)
   write: str = ""
   while True:
     try:
       data = cli_sock.recv(1024)
-      if not data:
+      print(f"Received: {data.decode('utf-8', errors='ignore')}")
+      if len(data) == 0:
         print(f"Connection closed")
         break
-      print(f"Received: {data.decode('utf-8')}")
-      write += data.decode("utf-8")
-      print("attempting to write")
+      write += data.decode('utf-8')
+      print("Acquiring Lock")
       if lock.acquire(blocking = False):
-        print("wrote")
         shared_list.add(book_num, write) #add data to this list
+        print("Locked and Added")
         lock.release()
         write = ""
+        print("Lock Released")
     except:
+      print("Try terminates.")
       break
+ 
   lock.acquire(blocking = True)
   shared_list.write(book_num)
   lock.release()
@@ -106,18 +113,17 @@ def start_server(port):
     shared_list = llist()
     print("Server started, waiting for signal")
   # Server Operation
-    
     while True:
       (cli_sock, address) = serv_sock.accept()
       book_num = book_num + 1
-      print(f"Accepted Connection from {address}")
+      print(f"Starting thread for {address}")
       ct = threading.Thread(target = client_handler, args=[cli_sock, lock, shared_list, book_num])
       ct.start()
 
 # Main Script
 def main():
   # Argument Manager
-  port, pattern = arg_debugging()
+  port, pattern = arg_debugging(True)
   if port is None or pattern is None: 
     sys.exit(1)
   start_server(port)
