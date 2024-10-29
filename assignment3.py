@@ -35,14 +35,17 @@ class llist:
     return
 
   def write(self, book_num):
+    print("Are we writing?")
     if(book_num < 10):
       file_name = f"book_0{book_num}.txt"
     else: 
       file_name = f"book_{book_num}.txt"
+    
     curr_Node = self.header[book_num]
     with open(file_name, 'w') as file:
-      while curr_Node.data is not None: 
+      while curr_Node is not None: 
         file.write(curr_Node.data)
+        curr_Node = curr_Node.book_next
     return
 
 def arg_debugging(debug = True):
@@ -64,12 +67,14 @@ def arg_debugging(debug = True):
 
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
+  #serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
+  serv_sock.bind(("", port))
   serv_sock.setblocking(True)
   serv_sock.listen(10)
   return serv_sock
 
 def client_handler(cli_sock, lock, shared_list, book_num):
+  print("We are client")
   cli_sock.setblocking(False)
   write: str = ""
   while True:
@@ -80,7 +85,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
         break
       print(f"Received: {data.decode('utf-8')}")
       write += data.decode("utf-8")
-
+      print("attempting to write")
       if lock.acquire(blocking = False):
         shared_list.add(book_num, write) #add data to this list
         lock.release()
@@ -103,7 +108,7 @@ def start_server(port):
     
     while True:
       (cli_sock, address) = serv_sock.accept()
-      bookNum += 1
+      book_num = book_num + 1
       print(f"Accepted Connection from {address}")
       ct = threading.Thread(target = client_handler, args=[cli_sock, lock, shared_list, book_num])
       ct.start()
