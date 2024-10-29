@@ -14,7 +14,7 @@ class Node:
     self.book_next = book_next
     self.next_frequent_search = next_frequent_search
 
-class shared_list:
+class llist:
   def __init__(self):
     self.list = None
     self.tail = None
@@ -78,7 +78,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
       if not data:
         print(f"Connection closed")
         break
-      print(f"Received: {data.decode("utf-8")}")
+      print(f"Received: {data.decode('utf-8')}")
       write += data.decode("utf-8")
 
       if lock.acquire(blocking = False):
@@ -97,7 +97,7 @@ def start_server(port):
     serv_sock = init_serv_sock(port)
     lock = threading.Lock()
     book_num: int = 0
-    shared_list = shared_list()
+    shared_list = llist()
     print("Server started, waiting for signal")
   # Server Operation
     
