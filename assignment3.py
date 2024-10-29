@@ -87,6 +87,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
       write += data.decode("utf-8")
       print("attempting to write")
       if lock.acquire(blocking = False):
+        print("wrote")
         shared_list.add(book_num, write) #add data to this list
         lock.release()
         write = ""
