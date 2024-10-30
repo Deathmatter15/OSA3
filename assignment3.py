@@ -2,7 +2,6 @@
 
 # Python file for a multi-threaded network server in python.
 import sys 
-import select
 import socket
 import threading
 from queue import Queue
@@ -98,24 +97,26 @@ def client_receiver(data, write):
 
 def client_handler(cli_sock, lock, shared_list, book_num):
   print("Executing client_handler()")
-  cli_sock.setblocking(False)
-  cli_sock.settimeout(10)
+ #Initialise parameters
   write = ""
-  blocking_index = 0
-  while True:
+  signal = True
+  while signal:
     try:
       data = cli_sock.recv(1024)
-      if len(data) == 0:
-        break
-      write = client_receiver(data, write)
+      if data: 
+        write = client_receiver(data, write)
+      else:
+        #Break code if there is no data at all.
+        signal = False
+        continue
 
-    except socket.timeout:
-      print("Operation timeout!")
-      break
     except Exception as e:
       print(f"Exception as: {e}")
       break
-
+    
+    except:
+      continue
+    
     if lock.acquire(blocking = False):
       shared_list.add(book_num, write)
       lock.release()
@@ -131,11 +132,11 @@ def client_handler(cli_sock, lock, shared_list, book_num):
 
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-  serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #Solves address in use when Ctrl+C.
+  serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) 
   #serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
   serv_sock.bind(("", port))
   serv_sock.setblocking(True)
-  serv_sock.listen(10)
+  serv_sock.listen(15)
   return serv_sock
 #End init_serv.
 
