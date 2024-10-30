@@ -26,7 +26,7 @@ class LList:
   #End init()
 
   def add_book_next(self, book_num, node:Node): 
-    print(f"adding node for Book: {book_num}")
+    print(f"Executing add_book_next: {book_num}")
     if book_num not in self.header:
       self.header[book_num] = node
       self.footer[book_num] = node
@@ -43,7 +43,7 @@ class LList:
       self.tail = self.tail.next
   #End add_list()
   def add(self, book_num, write):
-    print(f"New add() for {write}")
+    print(f"Executing add() for {write}")
     new_node = Node(write)
     self.add_book_next(book_num, new_node)
     self.add_list(new_node)
@@ -92,7 +92,8 @@ def arg_debugging(debug = True):
 def client_receiver(data, write): 
     print("Executing client_receiver()")
     write += data.decode('utf-8') 
-    print(write)
+    text = write.rstrip("\n")
+    print(text)
     return write
 #End client_receiver
 
@@ -101,7 +102,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
   cli_sock.setblocking(False)
   cli_sock.settimeout(10)
   write = ""
-  blocking_index = 0
+
   while True:
     try:
       data = cli_sock.recv(1024)
@@ -140,7 +141,7 @@ def init_serv_sock(port):
 #End init_serv.
 
 def start_server(serv_sock):
-  print("Executing ")
+  print("Executing start_server()")
   lock = threading.Lock()
   book_num: int = 0
   shared_list = LList()
@@ -149,7 +150,7 @@ def start_server(serv_sock):
   while True:
     (cli_sock, address) = serv_sock.accept()
     book_num = book_num + 1
-    print(f"Starting thread for {address}")
+    print(f"Starting thread for {address}\n")
     ct = threading.Thread(target = client_handler, args = [cli_sock, lock, shared_list, book_num])
     ct.start()
 #End start_server.
