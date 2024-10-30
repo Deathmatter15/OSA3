@@ -1,4 +1,26 @@
-Introductionn.
-1. Develop structures with concurrency in mind. 
-2. Develop a high-performance multi-threaded network server. 
+***Introduction**
+Welcome to my server!
 
+Due to system dependencies, my program does not run on the gradescope. 
+It is working on my device, but there is a few dependencies. 
+
+1. Ports are finicky in def init_serv_sock(port)
+  135 serv_sock.bind(("", port))'
+  If the this doesn't work:
+  Comment it and uncomment'
+  136 serv_sock.bind('0.0.0.0', port))'
+  or' 
+  137 serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))'
+
+2. Execute the server using: 
+  python assignment3.py -l 12345 -p "happy"
+then on a seperate terminal run:'
+  nc localhost 1234 -i <delay> < file.txt'
+  or'
+  nc -v localhost 1234 -i <delay> < file.txt
+  '
+
+Note: I need a cli_sock.settimeout(10) to end the recv loop. 
+Hence, change that according to the time of the repeat. 
+
+Cheers!
