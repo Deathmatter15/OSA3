@@ -96,7 +96,7 @@ def client_receiver(data, write):
 def client_handler(cli_sock, lock, shared_list, book_num):
   print("Executing client_handler()")
   cli_sock.setblocking(False)
-  cli_sock.settimeout(3)
+  cli_sock.settimeout(10)
   write = ""
   blocking_index = 0
   while True:
@@ -106,15 +106,9 @@ def client_handler(cli_sock, lock, shared_list, book_num):
         break
       write = client_receiver(data, write)
 
-    except BlockingIOError:
-      # If no data is available, continue checking
-      if(blocking_index > 10):
-        print(f"No data available to read (non-blocking). Breaking at {blocking_index}")
-        blocking_index = 0
-        break
-      blocking_index = blocking_index + 1
-      continue  # Optional: This can also be removed if not needed
-    
+    except socket.timeout:
+      print("Operation timeout!")
+      break
     except Exception as e:
       print(f"Exception as: {e}")
       break
@@ -135,8 +129,8 @@ def client_handler(cli_sock, lock, shared_list, book_num):
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #Solves address in use when Ctrl+C.
-  serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
-  #serv_sock.bind(("", port))
+  #serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
+  serv_sock.bind(("", port))
   serv_sock.setblocking(True)
   serv_sock.listen(10)
   return serv_sock
