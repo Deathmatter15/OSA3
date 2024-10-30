@@ -77,8 +77,11 @@ def arg_debugging(debug = True):
     return None, None
 
   port = int(sys.argv[2])
-  
+  if port < 1024:
+    print(f"Invalid port {port}")
+    sys.exit()
   pattern: str = sys.argv[4]
+  
   if(debug):
     print(f"Script name: {sys.argv[0]}")
     print(f"port number: {port}")
