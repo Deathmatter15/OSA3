@@ -14,6 +14,7 @@ class Node:
     self.data = data
     self.book_next: Node = book_next
     self.next_frequent_search = next_frequent_search
+#End Node
 
 class LList:
   def __init__(self):
@@ -22,6 +23,7 @@ class LList:
     self.header:Node = {}
     self.footer:Node = {}
     return
+  #End init()
 
   def add_book_next(self, book_num, node:Node): 
     if book_num not in self.header:
@@ -30,7 +32,7 @@ class LList:
     else:
       self.footer[book_num].next = node
       self.footer[book_num] = node
-      
+  #End add_book_next() 
   def add_list(self, node:Node): 
     if self.list is None:
       self.list = node
@@ -38,27 +40,30 @@ class LList:
     else:
       self.tail = node
       self.tail = self.tail.next
-
+  #End add_list()
   def add(self, book_num, write):
+    print(f"New add() for {write}")
     new_node = Node(write)
-    print(f"Adding to {book_num}")
     self.add_book_next(book_num, new_node)
-    print(f"Adding node {write}")
     self.add_list(new_node)
     return
-
+  #End add()
+  
   def write(self, book_num):
+    print(f"writing for book_num: {book_num}")
     if(book_num < 10):
       file_name = f"book_0{book_num}.txt"
     else: 
       file_name = f"book_{book_num}.txt"
-    curr_Node = self.header[book_num]
     
+    curr_Node = self.header[book_num]
     with open(file_name, 'w') as file:
       while curr_Node is not None: 
         file.write(curr_Node.data)
         curr_Node = curr_Node.book_next
     return
+  #End write()
+#End LList
 
 def arg_debugging(debug = True):
   if len(sys.argv) !=5:
@@ -73,6 +78,37 @@ def arg_debugging(debug = True):
     print(f"port number: {port}")
     print(f"Pattern type: {pattern}")
   return port, pattern
+#End arg_debugging.
+
+def client_receiver(cli_sock): 
+    print("Executing client_receiver")
+    data = cli_sock.recv(1024)
+    write: str = ""
+    write += data.decode('utf-8') 
+    print(write)
+    return write
+#End client_receiver
+
+def client_handler(cli_sock, lock, shared_list, book_num):
+  print("Executing client_handler")
+  while True:
+    try:
+      write = client_receiver(cli_sock)
+      if len(write) == 0:
+        break
+      if lock.acquire(blocking = False):
+        shared_list.add(book_num, write)
+        lock.release()
+    except:
+      print(f"Exempt on {cli_sock.recv(1024).decode('utf-8')}")
+      break
+  #End client thread.
+  lock.acquire(blocking = True)
+  shared_list.write(book_num)
+  lock.release()
+  cli_sock.close()
+  return
+#End client_handler.
 
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,56 +118,36 @@ def init_serv_sock(port):
   serv_sock.setblocking(True)
   serv_sock.listen(10)
   return serv_sock
+#End init_serv.
 
-def client_handler(cli_sock, lock, shared_list, book_num):
-  cli_sock.setblocking(False)
-  write: str = ""
-  while True:
-    try:
-      data = cli_sock.recv(1024)
-      print(f"Received: {data.decode('utf-8', errors='ignore')}")
-      if len(data) == 0:
-        print("No data transmitted, breaking")
-        break
-      write += data.decode('utf-8')
-      print("Acquiring Lock")
-      if lock.acquire(blocking = False):
-        shared_list.add(book_num, write) #add data to this list
-        print("Locked and Added")
-        lock.release()
-        write = ""
-        print("Lock Released")
-    except:
-      print("Try terminates.")
-      break
- 
-  lock.acquire(blocking = True)
-  shared_list.write(book_num)
-  lock.release()
-  cli_sock.close()
-  print("Close connection")
-
-def start_server(port):
-    serv_sock = init_serv_sock(port)
-    lock = threading.Lock()
-    book_num: int = 0
-    shared_list = llist()
-    print("Server started, waiting for signal")
+def start_server(serv_sock):
+  print("Starting Server")
+  lock = threading.Lock()
+  book_num: int = 0
+  shared_list = LList()
   # Server Operation
-    while True:
-      (cli_sock, address) = serv_sock.accept()
-      book_num = book_num + 1
-      print(f"Starting thread for {address}")
-      ct = threading.Thread(target = client_handler, args=[cli_sock, lock, shared_list, book_num])
-      ct.start()
+  
+  while True:
+    (cli_sock, address) = serv_sock.accept()
+    book_num = book_num + 1
+    print(f"Starting thread for {address}")
+    ct = threading.Thread(target = client_handler, args = [cli_sock, lock, shared_list, book_num])
+    ct.start()
+#End start_server.
 
-# Main Script
 def main():
-  # Argument Manager
+  # Accept system arguments.
   port, pattern = arg_debugging(True)
   if port is None or pattern is None: 
     sys.exit(1)
-  start_server(port)
-  # Initialising Socket
+
+  # Initialise socket.
+  serv_sock = init_serv_sock(port)
+  
+  # Start server.
+  start_server(serv_sock)
+#End main().
+
 if __name__ == "__main__":
     main()
+#End call().
