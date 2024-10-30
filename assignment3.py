@@ -15,40 +15,45 @@ class Node:
     self.book_next: Node = book_next
     self.next_frequent_search = next_frequent_search
 
-class llist:
+class LList:
   def __init__(self):
-    self.list = None
-    self.tail = None
-    self.header = {}
+    self.list:Node= None
+    self.tail:Node= None
+    self.header:Node = {}
+    self.footer:Node = {}
     return
 
-  def add(self, book_num, write):
-    new_Node = Node(write)
+  def add_book_next(self, book_num, node:Node): 
     if book_num not in self.header:
-      self.header[book_num] = new_Node
+      self.header[book_num] = node
+      self.footer[book_num] = node.next
     else:
-      curr_Node = self.header[book_num]
-      while(curr_Node.book_next is not None):
-        print("book_num looping")
-        curr_Node = curr_Node.book_next
-      curr_Node.book_next = new_Node
-    
+      self.footer[book_num].next = node
+      self.footer[book_num] = node
+      
+  def add_list(self, node:Node): 
     if self.list is None:
-      self.list = new_Node
+      self.list = node
       self.tail = self.list.next
     else:
-      self.tail = new_Node
+      self.tail = node
       self.tail = self.tail.next
+
+  def add(self, book_num, write):
+    new_node = Node(write)
+    print(f"Adding to {book_num}")
+    self.add_book_next(book_num, new_node)
+    print(f"Adding node {write}")
+    self.add_list(new_node)
     return
 
   def write(self, book_num):
-    print("Are we writing?")
     if(book_num < 10):
       file_name = f"book_0{book_num}.txt"
     else: 
       file_name = f"book_{book_num}.txt"
-    
     curr_Node = self.header[book_num]
+    
     with open(file_name, 'w') as file:
       while curr_Node is not None: 
         file.write(curr_Node.data)
@@ -86,7 +91,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
       data = cli_sock.recv(1024)
       print(f"Received: {data.decode('utf-8', errors='ignore')}")
       if len(data) == 0:
-        print(f"Connection closed")
+        print("No data transmitted, breaking")
         break
       write += data.decode('utf-8')
       print("Acquiring Lock")
