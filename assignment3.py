@@ -80,9 +80,9 @@ def arg_debugging(debug = True):
   return port, pattern
 #End arg_debugging.
 
-def client_receiver(cli_sock): 
-    print("Executing client_receiver")
-    data = cli_sock.recv(1024)
+def client_receiver(data): 
+    print("Executing client_receiver()")
+    
     write: str = ""
     write += data.decode('utf-8') 
     print(write)
@@ -90,18 +90,27 @@ def client_receiver(cli_sock):
 #End client_receiver
 
 def client_handler(cli_sock, lock, shared_list, book_num):
-  print("Executing client_handler")
+  print("Executing client_handler()")
+  cli_sock.setblocking(False)
+  
   while True:
     try:
-      write = client_receiver(cli_sock)
-      if len(write) == 0:
+      data = cli_sock.recv(1024)
+      if len(data) == 0:
         break
+      write = client_receiver(data)
+    except:
+      print(f"Exempt on Recv")
+      break
+
+    try:
       if lock.acquire(blocking = False):
         shared_list.add(book_num, write)
         lock.release()
     except:
-      print(f"Exempt on {cli_sock.recv(1024).decode('utf-8')}")
+      print(f"Exempt on Lock")
       break
+  
   #End client thread.
   lock.acquire(blocking = True)
   shared_list.write(book_num)
@@ -121,7 +130,7 @@ def init_serv_sock(port):
 #End init_serv.
 
 def start_server(serv_sock):
-  print("Starting Server")
+  print("Executing ")
   lock = threading.Lock()
   book_num: int = 0
   shared_list = LList()
@@ -141,10 +150,8 @@ def main():
   if port is None or pattern is None: 
     sys.exit(1)
 
-  # Initialise socket.
+  # Initialise Server
   serv_sock = init_serv_sock(port)
-  
-  # Start server.
   start_server(serv_sock)
 #End main().
 
