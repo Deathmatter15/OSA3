@@ -96,7 +96,7 @@ def client_receiver(data, write):
 def client_handler(cli_sock, lock, shared_list, book_num):
   print("Executing client_handler()")
   cli_sock.setblocking(False)
-  cli_sock.settimeout(5.0)
+  cli_sock.settimeout(3)
   write = ""
   blocking_index = 0
   while True:
@@ -117,7 +117,6 @@ def client_handler(cli_sock, lock, shared_list, book_num):
     
     except Exception as e:
       print(f"Exception as: {e}")
-      print(f"Exempt cause by data: {data}")
       break
 
     if lock.acquire(blocking = False):
@@ -136,7 +135,7 @@ def client_handler(cli_sock, lock, shared_list, book_num):
 def init_serv_sock(port):
   serv_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   serv_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) #Solves address in use when Ctrl+C.
-  serv_sock.bind(('0.0.0.0', port))
+  serv_sock.bind((socket.gethostbyname(socket.gethostname()), port))
   #serv_sock.bind(("", port))
   serv_sock.setblocking(True)
   serv_sock.listen(10)
