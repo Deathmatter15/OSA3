@@ -26,11 +26,12 @@ class LList:
   #End init()
 
   def add_book_next(self, book_num, node:Node): 
+    print(f"adding node for Book: {book_num}")
     if book_num not in self.header:
       self.header[book_num] = node
-      self.footer[book_num] = node.next
+      self.footer[book_num] = node
     else:
-      self.footer[book_num].next = node
+      self.footer[book_num].book_next = node
       self.footer[book_num] = node
   #End add_book_next() 
   def add_list(self, node:Node): 
@@ -50,13 +51,18 @@ class LList:
   #End add()
   
   def write(self, book_num):
-    print(f"writing for book_num: {book_num}")
+    print(f"Execute self.write(): {book_num}")
     if(book_num < 10):
       file_name = f"book_0{book_num}.txt"
     else: 
       file_name = f"book_{book_num}.txt"
     
-    curr_Node = self.header[book_num]
+    if book_num in self.header:
+      curr_Node = self.header[book_num]
+    else:
+      print(f"{book_num} not in header")
+      sys.exit()
+  
     with open(file_name, 'w') as file:
       while curr_Node is not None: 
         file.write(curr_Node.data)
@@ -80,10 +86,8 @@ def arg_debugging(debug = True):
   return port, pattern
 #End arg_debugging.
 
-def client_receiver(data): 
+def client_receiver(data, write): 
     print("Executing client_receiver()")
-    
-    write: str = ""
     write += data.decode('utf-8') 
     print(write)
     return write
@@ -92,25 +96,35 @@ def client_receiver(data):
 def client_handler(cli_sock, lock, shared_list, book_num):
   print("Executing client_handler()")
   cli_sock.setblocking(False)
-  
+  cli_sock.settimeout(5.0)
+  write = ""
+  blocking_index = 0
   while True:
     try:
       data = cli_sock.recv(1024)
       if len(data) == 0:
         break
-      write = client_receiver(data)
-    except:
-      print(f"Exempt on Recv")
+      write = client_receiver(data, write)
+
+    except BlockingIOError:
+      # If no data is available, continue checking
+      if(blocking_index > 10):
+        print(f"No data available to read (non-blocking). Breaking at {blocking_index}")
+        blocking_index = 0
+        break
+      blocking_index = blocking_index + 1
+      continue  # Optional: This can also be removed if not needed
+    
+    except Exception as e:
+      print(f"Exception as: {e}")
+      print(f"Exempt cause by data: {data}")
       break
 
-    try:
-      if lock.acquire(blocking = False):
-        shared_list.add(book_num, write)
-        lock.release()
-    except:
-      print(f"Exempt on Lock")
-      break
-  
+    if lock.acquire(blocking = False):
+      shared_list.add(book_num, write)
+      lock.release()
+      write = ""
+
   #End client thread.
   lock.acquire(blocking = True)
   shared_list.write(book_num)
